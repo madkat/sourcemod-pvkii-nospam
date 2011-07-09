@@ -24,6 +24,7 @@ new float:cvar_shield;
 #define NS_SHIELD	1
 
 new Handle:clientTimers[MAXPLAYERS + 1][NS_TIMERS];
+new jumpState[MAXPLAYERS + 1];
 
 public OnPluginStart()
 {
@@ -82,15 +83,25 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
 	{
 	    if (buttons & IN_JUMP)
 	    {
-		if (clientTimers[client][NS_JUMP] == INVALID_HANDLE)
+		new GroundEntity = GetEntPropEnt(client, Prop_Send, "m_hGroundEntity");
+		if (jumpState[client] == 0 && GroundEntity != -1)
 		{
-		    clientTimers[client][NS_JUMP] = CreateTimer(cvar_jump, ResetJumpTimer, client);
-		    return Plugin_Continue;
+		    if (clientTimers[client][NS_JUMP] == INVALID_HANDLE)
+		    {
+			clientTimers[client][NS_JUMP] = CreateTimer(cvar_jump, ResetJumpTimer, client);
+			return Plugin_Continue;
+		    }
+		    else
+		    {
+			buttons ^= IN_JUMP;
+			return Plugin_Continue;
+		    }
 		}
-		else
-		{
-		    return Plugin_Handled;
-		}
+		jumpState[client] = 1;
+	    }
+	    else
+	    {
+		jumpState[client] = 0;
 	    }
 	}
     }
@@ -105,7 +116,8 @@ public Action:ResetJumpTimer(Handle:timer, any:client)
 
 public ResetClient(client)
 {
-    for (new i = 0; i <= NS_TIMERS; i++) clientTimers[client][i] = INVALID_HANDLE;
+    for (new i = 0; i < NS_TIMERS; i++) clientTimers[client][i] = INVALID_HANDLE;
+    jumpState[client] = 0;
 }
 
 public OnMapStart()
